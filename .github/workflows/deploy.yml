@@ -42,9 +42,7 @@ jobs:
 #          curl -s http://localhost:5000/v2/ || echo "Registry not responding yet"
 
       - name: Build and push
-        uses: docker/build-push-action@v5
         with:
-          context: .
           file: ./Dockerfile
           push: true
           tags: |
@@ -53,6 +51,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          driver-opts: network=host
 
 #      - name: Deploy to server
 #        uses: appleboy/ssh-action@v1.0.3
