@@ -1,17 +1,17 @@
-# Dockerfile
-# Stage 1: Build dependencies
-FROM python:3.12-alpine AS builder
+FROM python:3.13-alpine AS builder
 
 WORKDIR /build
 RUN apk add --no-cache gcc musl-dev libffi-dev postgresql-dev
 
-RUN pip install --no-cache-dir --user poetry
-
 COPY pyproject.toml ./
-RUN python -m pip install --user --no-cache-dir -e .
+COPY uv.lock ./
 
-# Stage 2: Production image
-FROM python:3.12-alpine AS production
+RUN pip install uv \
+ && UV_PYTHON=/usr/local/bin/python3.13 \
+    uv sync --frozen --no-install-project --no-dev
+
+
+FROM python:3.13-alpine AS production
 
 WORKDIR /app
 
@@ -19,12 +19,12 @@ WORKDIR /app
 RUN apk add --no-cache libpq
 
 # Копируем установленные пакеты из builder
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+COPY --from=builder /build/.venv /app/.venv
+ENV PATH=/app/.venv/bin:$PATH
 
 # Копируем код
 COPY src/ ./src/
-COPY alembic/ ./alembic/
+COPY migrations/ ./alembic/
 COPY alembic.ini ./
 
 # Не-root пользователь для безопасности
