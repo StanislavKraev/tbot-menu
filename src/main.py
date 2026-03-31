@@ -67,7 +67,7 @@ async def run_webhook(
     webhook_port = settings["webhook_port"]
     site = web.TCPSite(runner, host=webhook_host, port=webhook_port)
 
-    logger.info(f"Server started on {settings.webhook_host}:{webhook_port}")
+    logger.info(f"Server started on {webhook_host}:{webhook_port}")
     await site.start()
 
     # Бесконечное ожидание
