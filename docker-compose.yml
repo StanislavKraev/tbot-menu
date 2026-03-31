@@ -41,12 +41,13 @@ services:
           memory: 256M
         reservations:
           memory: 64M
+    networks:
+      - bot-network
 
   # Load balancer для webhook режима (опционально)
   nginx:
     image: nginx:alpine
     ports:
-      - "8080:8080"
       - "80:80"
       - "443:443"
     volumes:

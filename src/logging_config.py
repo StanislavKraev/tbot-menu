@@ -98,7 +98,7 @@ def configure_logging(level: str = "INFO", format_type: str = "logfmt", sink: st
         level=level,
         format=formatter,
         enqueue=True,  # Thread-safe for async
-        backtrace=True,
+        backtrace=False,
         diagnose=level == "DEBUG",
         serialize=False,
     )
