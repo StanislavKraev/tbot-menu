@@ -28,9 +28,6 @@ jobs:
 
       - name: Create SSH Tunnel
         run: |
-          # -L 5000:localhost:5000 значит:
-          # порт 5000 на машине GitHub пробросить на порт 5000 сервера
-          # -f (фоновый режим), -N (не выполнять удаленную команду)
           ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no -f -N -L 5000:localhost:5000 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
           curl -s http://localhost:5000/v2/ || echo "Registry not responding yet"
 
