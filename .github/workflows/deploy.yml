@@ -48,14 +48,16 @@ jobs:
           file: ./Dockerfile
           push: false
           tags: |
-            127.0.0.1:5000/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
       - name: Copy image to prod
         run: |
-          docker save 127.0.0.1:5000/${{ env.IMAGE_NAME }}:${{ github.sha }} | ssh -C deployer@kraevst.fvds.ru docker load
+          docker save ${{ env.IMAGE_NAME }}:${{ github.sha }} | ssh -C deployer@kraevst.fvds.ru -p 2203 docker load
+          ssh deployer@kraevst.fvds.ru -p 2203 docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.IMAGE_NAME }}:latest
 
 #      - name: Deploy to server
 #        uses: appleboy/ssh-action@v1.0.3
