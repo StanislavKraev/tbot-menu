@@ -37,7 +37,8 @@ def do_run_migrations(connection: Connection) -> None:
 def run_migrations() -> None:
     configuration = config.get_section(config.config_ini_section)
     if not configuration.get("sqlalchemy.url"):
-        configuration["sqlalchemy.url"] = get_url()
+        settings = Settings()
+        configuration["sqlalchemy.url"] = settings.database_conn
 
     connectable = engine_from_config(
         configuration,
