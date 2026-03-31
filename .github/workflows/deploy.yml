@@ -69,6 +69,16 @@ jobs:
           source: ${{ env.IMAGE_NAME }}.tar.gz
           target: "~/"
 
+      - name: Copy image to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: docker-compose.yml
+          target: "~/my_bot/"
+
       - name: Load image and Restart
         uses: appleboy/ssh-action@master
         with:
@@ -80,3 +90,5 @@ jobs:
             cd ~/
             zcat ${{ env.IMAGE_NAME }}.tar.gz | docker load
             rm ${{ env.IMAGE_NAME }}.tar.gz
+            cd my_bot
+            docker compose up -d --force-recreate bot
