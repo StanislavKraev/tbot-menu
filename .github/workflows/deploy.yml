@@ -56,10 +56,10 @@ jobs:
 
       - name: Copy image to prod
         run: |
-          docker buildx build --load --file Dockerfile . --cache-to "type=gha,mode=max" --cache-from type=gha
-          docker save ${{ env.IMAGE_NAME }}:${{ github.sha }} | ssh -C deployer@kraevst.fvds.ru -p 2203 docker load
+          docker buildx build -o type=docker,dest=- --file Dockerfile --cache-to "type=gha,mode=max" --cache-from type=gha . | ssh -C deployer@kraevst.fvds.ru -p 2203 docker load
           ssh deployer@kraevst.fvds.ru -p 2203 docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.IMAGE_NAME }}:latest
 
+#          docker save ${{ env.IMAGE_NAME }}:${{ github.sha }} | ssh -C deployer@kraevst.fvds.ru -p 2203 docker load
 #      - name: Deploy to server
 #        uses: appleboy/ssh-action@v1.0.3
 #        with:
