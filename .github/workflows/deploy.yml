@@ -28,7 +28,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
-            echo ${{ secrets.SSH_HOST }}
+            docker ps
             docker stop registry-tunnel || true
             docker rm -f registry-tunnel || true
             # Открываем туннель для docker registry
