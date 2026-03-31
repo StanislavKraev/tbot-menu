@@ -19,6 +19,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Create SSH tunnel locally
+        run: echo ${{ secrets.SSH_HOST }}
+
       - name: Setup SSH tunnel to registry
         uses: appleboy/ssh-action@v1.2.5
         with:
