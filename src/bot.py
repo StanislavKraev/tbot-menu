@@ -1,5 +1,5 @@
-# src/bot.py
 from aiogram import Bot, Dispatcher, Router
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
@@ -15,7 +15,7 @@ class BotInitializer:
     def __init__(self, bot_token: str, user_service: UserService, pdf_service: PdfService) -> None:
         self.user_service = user_service
         self.pdf_service = pdf_service
-        self.bot = Bot(token=bot_token, parse_mode=ParseMode.HTML)
+        self.bot = Bot(token=bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
         self.dp = Dispatcher()
         self._setup_routers()
 
