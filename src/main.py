@@ -50,22 +50,24 @@ async def run_webhook(
         dispatcher=bot_initializer.dp,
         bot=bot_initializer.bot,
     )
-    webhook_requests_handler.register(app, path=settings.webhook_path)
+    webhook_requests_handler.register(app, path=settings["webhook_path"])
 
     setup_application(app, bot_initializer.dp, bot=bot_initializer.bot)
 
     # Настройка webhook URL
-    webhook_url = settings.webhook_url
+    webhook_url = settings["webhook_url"]
     if webhook_url is not None:
         await bot_initializer.bot.set_webhook(webhook_url, drop_pending_updates=True)
-        logger.info(f"Webhook set to {settings.webhook_url}")
+        logger.info(f"Webhook set to {webhook_url}")
 
     runner = web.AppRunner(app)
     await runner.setup()
 
-    site = web.TCPSite(runner, host=settings.webhook_host, port=settings.webhook_port)
+    webhook_host = settings["webhook_host"]
+    webhook_port = settings["webhook_port"]
+    site = web.TCPSite(runner, host=webhook_host, port=webhook_port)
 
-    logger.info(f"Server started on {settings.webhook_host}:{settings.webhook_port}")
+    logger.info(f"Server started on {settings.webhook_host}:{webhook_port}")
     await site.start()
 
     # Бесконечное ожидание
