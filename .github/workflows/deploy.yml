@@ -20,7 +20,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Setup SSH tunnel to registry
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
@@ -64,5 +64,5 @@ jobs:
           script: |
             cd /opt/telegram-bot
             docker-compose pull
-            docker-compose up -d --scale bot-1=1 --scale bot-2=1 --scale bot-3=1
+            docker-compose up -d --scale bot-1=1
             docker-compose ps
