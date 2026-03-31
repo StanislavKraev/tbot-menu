@@ -1,0 +1,53 @@
+[tool.bumpversion]
+current_version = "0.1.0"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+search = "{current_version}"
+replace = "{new_version}"
+regex = false
+ignore_missing_version = false
+ignore_missing_files = false
+tag = true
+sign_tags = false
+tag_name = "v{new_version}"
+tag_message = "Bump version: {current_version} → {new_version}"
+allow_dirty = false
+commit = true
+message = "Bump version: {current_version} → {new_version}"
+moveable_tags = []
+commit_args = ""
+setup_hooks = [
+  "echo 'Ensure there are changelog records in .changes/unreleased to publish'; [ -d .changes/unreleased ] && [ -n \"$(ls .changes/unreleased/ 2>/dev/null)\" ] && exit 0 || exit 1"
+]
+pre_commit_hooks = [
+  "changie batch ${BVHOOK_NEW_VERSION}",
+  "changie merge",
+  "git add CHANGELOG.md",
+  "git add .changes/*"
+]
+post_commit_hooks = []
+
+[[tool.bumpversion.files]]
+filename = "tbot/__pkg__.py"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = """
+name = "tbot-menu"
+version = "{current_version}"
+"""
+replace = """
+name = "tbot-menu"
+version = "{new_version}"
+"""
+
+[[tool.bumpversion.files]]
+filename = "uv.lock"
+search = """
+name = "tbot-menu"
+version = "{current_version}"
+"""
+replace = """
+name = "tbot-menu"
+version = "{new_version}"
+"""
