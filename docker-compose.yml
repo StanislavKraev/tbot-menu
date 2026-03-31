@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: bot
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
-      POSTGRES_DB: bot
+      POSTGRES_USER: tbot
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: tbot
     volumes:
       - postgres_data:/var/lib/postgresql/data
     deploy:
@@ -28,7 +28,7 @@ services:
       WEBHOOK_HOST: 0.0.0.0
       WEBHOOK_PORT: 8080
       DB_HOST: postgres
-      DB_PASSWORD: ${DATABASE_CONN}
+      DATABASE_CONN: ${DATABASE_CONN}
       ADMIN_TELEGRAM_ID: ${ADMIN_TELEGRAM_ID}
       YANDEX_DISK_PDF_URL: ${YANDEX_DISK_PDF_URL}
     depends_on:
