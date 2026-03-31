@@ -26,10 +26,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           known_hosts: unnecessary # Для простоты, или добавьте хеш сервера
 
-      - name: Create SSH Tunnel
-        run: |
-          ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no -f -N -L 0.0.0.0:5000:localhost:5000 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
-          curl -s http://localhost:5000/v2/ || echo "Registry not responding yet"
+#      - name: Create SSH Tunnel
+#        run: |
+#          ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no -f -N -L 0.0.0.0:5000:localhost:5000 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
+#          curl -s http://localhost:5000/v2/ || echo "Registry not responding yet"
 
 #      - name: Create SSH tunnel locally
 #        run: |
@@ -46,15 +46,16 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          push: true
+          push: false
           tags: |
-            127.0.0.1:5000/${{ env.IMAGE_NAME }}:latest
             127.0.0.1:5000/${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-          allow: network.host
-          network: host
+
+      - name: Copy image to prod
+        run: |
+          docker save 127.0.0.1:5000/${{ env.IMAGE_NAME }}:${{ github.sha }} | ssh -C deployer@kraevst.fvds.ru docker load
 
 #      - name: Deploy to server
 #        uses: appleboy/ssh-action@v1.0.3
