@@ -27,6 +27,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
+            echo ${{ secrets.SSH_HOST }}
             # Открываем туннель для docker registry
             docker run -d --name registry-tunnel -p 5000:5000 \
               alpine/socat TCP4-LISTEN:5000,fork TCP4:registry:5000 || true
