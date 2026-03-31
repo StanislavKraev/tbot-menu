@@ -1,0 +1,18 @@
+Generic single-database configuration with an async dbapi.
+
+## Commands
+
+### To migrate
+```console
+user~$ alembic upgrade head
+```
+
+### To migrate to custom database
+```console
+user~$ alembic -x dbname=postgresql://user:password@host:5432/database upgrade head
+```
+
+### To autogenerate migration
+```console
+user~$ python punk/migrations/autogenerate.py -m your_revision_message
+```

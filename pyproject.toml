@@ -1,0 +1,180 @@
+[dependency-groups]
+dev = [
+  "diff-cover[toml]>=9.2.1",
+  "ipdb>=0.13.13",
+  "pre-commit>=4.1.0",
+  "pycobertura>=3.3.2",
+  "pytest-xdist>=3.6.1",
+  "ruff==0.9.9",
+  "vulture>=2.14",
+  "sphinxcontrib-confluencebuilder>=2.12.0",
+  "asgi-lifespan>=2.1.0",
+  "faker>=23.0.0",
+  "testcontainers[postgres]>=4.14.2"
+]
+
+[project]
+name = "tbot-menu"
+version = "0.1.0"
+description = "Zolotaya Telegram bot"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "httpx>=0.26.0",
+  "aiogram>=3.26.0",
+  "alembic>=1.18.4",
+  "asyncpg>=0.31.0",
+  "dependency-injector>=4.49.0",
+  "fastapi>=0.135.2",
+  "httpx[http2]>=0.28.1",
+  "logfmter>=0.0.12",
+  "loguru>=0.7.3",
+  "mypy>=1.19.1",
+  "orjson>=3.11.7",
+  "psycopg2-binary>=2.9.11",
+  "pydantic>=2.12.5",
+  "pydantic-settings>=2.13.1",
+  "pytest>=9.0.2",
+  "pytest-asyncio>=1.3.0",
+  "pytest-cov>=7.1.0",
+  "pytest-httpserver>=1.1.5",
+  "sqlalchemy>=2.0.48",
+  "types-deprecated>=1.3.1.20260130",
+  "types-python-dateutil>=2.9.0.20260323",
+  "types-pyyaml>=6.0.12.20250915",
+  "types-setuptools>=82.0.0.20260210",
+  "typing-extensions>=4.15.0",
+  "uvicorn[standard]>=0.42.0"
+]
+
+[tool.coverage.report]
+precision = 2
+
+[tool.coverage.run]
+omit = ["tests/*"]
+source = ["tbot/**/*.py"]
+
+[tool.diff_cover]
+compare_branch = "origin/master"
+show_uncovered = true
+fail_under = 100
+html_report = "coverage.html"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+packages = ['src', 'tests']
+plugins = ["pydantic.mypy"]
+exclude = ["tbot/migrations/.*"]
+
+[[tool.mypy.overrides]]
+module = [
+  "testcontainers.*",
+  "expiringdict",
+  "uvicorn",
+  "sqlalchemy.*",
+  "fastapi_injectable",
+  "google.*"
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+addopts = [
+  '-m not manual',
+  '--strict-markers'
+]
+testpaths = "tests"
+markers = [
+  # Тесты требующие доступа к тестовым окружениям
+  # не запускаются в CI и требуют дополнительной настройки
+  "manual: tests relaying on the online dev environment and skipped in CI"
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+
+[tool.ruff.lint]
+exclude = [
+  '__init__.py',
+  'tbot/migrations/versions/*.py',
+  'gunicorn_conf.py'
+]
+select = [
+  "E", # pycodestyle errors
+  "W", # pycodestyle warnings
+  "F", # pyflakes
+  "I", # isort
+  "C", # flake8-comprehensions
+  "N", # naming
+  "D", # docstrings
+  "YTT", # flake8-2020
+  "ANN", # flake8-annotations
+  "ASYNC",
+  "S", # bandit
+  "BLE", # too broad exceptions
+  "A", # builtins
+  "T10",
+  # "DTZ", # default time zone
+  "B", # flake8-bugbear
+  "RUF", # ruff-specific
+  "UP" # pyupgrade
+]
+ignore = [
+  # "E501", # line too long, handled by black
+  "D211", # no-blank-line-before-class
+  "D213" # multi-line-summary-second-line
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"**__init__.py**" = ["ALL"]
+"**.py" = [
+  "ANN002", # Missing type annotation for `*args`
+  "ANN003", # Missing type annotation for `**kwargs`
+  "ANN101", # Missing type annotation for `self` in method
+  "ANN102", # Missing type annotation for `cls` in classmethod
+  "ANN204", # Missing return type annotation for special method `__init__`
+  "ANN401", # Dynamically typed expressions (typing.Any) are disallowed in `get_lang_field`
+  "D100", # Missing docstring in public module
+  "D101", # Missing docstring in public class/method
+  "D102", # Missing docstring in public method
+  "D103", # Missing docstring in public function
+  "D106", # Missing docstring in public nested class
+  "D107", # Missing docstring in `__init__`
+  "D203", # incorrect-blank-line-before-class
+  "RUF002", # Docstring contains ambiguous character
+  "RUF003" # Comment contains ambiguous character
+]
+"tests/**.py" = [
+  "C901", # function is too complex"
+  "D100", # Missing docstring in public module
+  "RUF015", # unnecessary-iterable-allocation-for-first-element
+  "S101", # Use of `assert` detected"
+  "S106", # Possible hardcoded password assigned to argument
+  "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+  "S608" # Possible SQL injection vector through string-based query construction
+]
+"punk/migrations/**.py" = [
+  "S605", # Starting a process with a shell, possible injection detected
+  "F403", # undefined-local-with-import-star
+  "D400", # First line should end with a period
+  "D415", # First line should end with a period, question mark, or exclamation point
+  "BLE001" # Do not catch blind exception: `Exception`
+]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends", "fastapi.Query", "fastapi.params.Query"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["fastapi", "pydantic", "starlette"]
+
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
+
+[[tool.uv.index]]
+name = "global"
+url = "https://pypi.org/simple/"

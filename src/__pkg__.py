@@ -1,0 +1,6 @@
+__package_name__ = "tbot-menu"
+__description__ = "Zolotaya Telegram bot"
+__author__ = "Stas Kraev"
+__email__ = "stanislav.kraev@gmail.com"
+__license__ = "Private"
+__version__ = "0.1.0"
