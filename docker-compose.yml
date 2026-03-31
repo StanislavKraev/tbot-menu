@@ -54,6 +54,7 @@ services:
       - "8080:8080"
       - "80:80"
       - "443:443"
+      - "127.0.0.1:5000:5000"
     volumes:
       - ./html:/usr/share/nginx/html
       - ./certs:/etc/letsencrypt
@@ -64,6 +65,8 @@ services:
       resources:
         limits:
           memory: 64M
+    networks:
+      - bot-network
 
   dozzle:
     image: amir20/dozzle:latest
@@ -80,8 +83,8 @@ services:
 
   registry:
     image: registry:3.0.0
-    ports:
-      - "127.0.0.1:5000:5000"
+#    ports:
+#      - "127.0.0.1:5000:5000"
     volumes:
       - registry_data:/var/lib/registry
     environment:
