@@ -24,11 +24,12 @@ ENV PATH=/app/.venv/bin:$PATH
 
 # Копируем код
 COPY src/ ./src/
-COPY migrations/ ./alembic/
+COPY migrations/ ./migrations/
 COPY alembic.ini ./
 
 # Не-root пользователь для безопасности
-RUN adduser -D -u 1000 appuser && chown -R appuser:appuser /app
+RUN adduser -D -u 1000 appuser && chown -R appuser:appuser /app  \
+ && ln -s /app/.venv/bin/alembic /usr/local/bin/alembic
 USER appuser
 
 ENV PYTHONPATH=/app
