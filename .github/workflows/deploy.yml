@@ -56,19 +56,27 @@ jobs:
 
       - name: Copy image to prod
         run: |
-          docker buildx build -o type=docker,dest=- --file Dockerfile --cache-to "type=gha,mode=max" --cache-from type=gha . | ssh -C deployer@kraevst.fvds.ru -p 2203 docker load
-          ssh deployer@kraevst.fvds.ru -p 2203 docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.IMAGE_NAME }}:latest
+          docker buildx build --tag ${{ env.IMAGE_NAME }}:latest --load .
+          docker save ${{ env.IMAGE_NAME }}:latest | gzip > ${{ env.IMAGE_NAME }}.tar.gz
 
-#          docker save ${{ env.IMAGE_NAME }}:${{ github.sha }} | ssh -C deployer@kraevst.fvds.ru -p 2203 docker load
-#      - name: Deploy to server
-#        uses: appleboy/ssh-action@v1.0.3
-#        with:
-#          host: ${{ secrets.SSH_HOST }}
-#          username: ${{ secrets.SSH_USER }}
-#          key: ${{ secrets.SSH_PRIVATE_KEY }}
-#          port: ${{ secrets.SSH_PORT || 22 }}
-#          script: |
-#            cd /opt/telegram-bot
-#            docker-compose pull
-#            docker-compose up -d --scale bot-1=1
-#            docker-compose ps
+      - name: Copy image to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: ${{ env.IMAGE_NAME }}.tar.gz
+          target: "~/"
+
+      - name: Load image and Restart
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/
+            zcat ${{ env.IMAGE_NAME }}.tar.gz | docker load
+            rm ${{ env.IMAGE_NAME }}.tar.gz
