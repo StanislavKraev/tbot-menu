@@ -91,7 +91,9 @@ services:
 
 volumes:
   postgres_data:
+    external: true
   registry_data:
+    external: true
 
 networks:
   bot-network:
