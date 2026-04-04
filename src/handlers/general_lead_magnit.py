@@ -1,134 +1,170 @@
-from aiogram import Router, types
-from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
+import asyncio
+from typing import Any
 
+import aiohttp
+from aiogram import F, Router, types
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.context import FSMContext
+from aiogram.types import InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from loguru import logger
+
+from ..services.user_service import UserService
+from .start import parse_utm
 from .states import GeneralLMStates
+
+SYMPTOM_TIRED = "tired"
+SYMPTOM_WEIGHT = "weight"
+SYMPTOM_CJUNK = "cjunk"
+SYMPTOM_ANALYSIS = "analysis"
+
+HANDFUL_GUIDE = "Спасибо! У нас как раз есть полезный гайд для вас.\n\nКуда отправить? Выберите удобный вариант:"
+
+BOT_ID = "KraevaNutriciologBot"
+CHECKLIST_FILE_ID = "123123123213"
+CHECKLIST_TITLE = "Гайд по здоровью"
+YANDEX_OAUTH_TOKEN = "todo"  # NoQA  # TODO: get from env
+
+
+async def get_yandex_direct_link(public_url: str, oauth_token: str) -> Any:
+    """Получаем прямую ссылку через API Яндекс.Диска."""
+    # Извлекаем ключ из public_url (после /i/)
+    file_key = public_url.split("/i/")[-1].split("?")[0]
+
+    api_url = "https://cloud-api.yandex.net/v1/disk/public/resources/download"
+    params = {"public_key": f"https://disk.yandex.ru/i/{file_key}"}
+
+    headers = {"Authorization": f"OAuth {oauth_token}"}  # или без токена для публичных
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(api_url, params=params, headers=headers) as resp:
+            data = await resp.json()
+            return data.get("href")  # Прямая ссылка на скачивание
 
 
 def create_general_lm_router() -> Router:
     general_lm_router = Router()
 
-    @general_lm_router.message(Command("order"))
-    async def cmd_order(message: types.Message, state: FSMContext) -> None:
-        """Начало диалога заказа."""
-        await state.set_state(GeneralLMStates.waiting_for_product)
-        await message.answer(
-            "🛍 <b>Новый заказ</b>\n\n"
-            "Выберите товар:\n"
-            "1. iPhone 15 Pro - 120000₽\n"
-            "2. MacBook Air - 150000₽\n"
-            "3. AirPods Pro - 25000₽\n\n"
-            "Введите номер товара (1-3):"
-        )
+    def get_symptom_inline_keyboard() -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
 
-    @general_lm_router.message(Command("cancel"))
-    async def cmd_cancel(message: types.Message, state: FSMContext) -> None:
-        """Отмена диалога."""
-        current_state = await state.get_state()
-        if current_state is None:
-            await message.answer("Нет активного диалога")
+        # Кнопка со ссылкой
+        # builder.row(types.InlineKeyboardButton(
+        #     text="Наш сайт", url="https://google.com")
+        # )
+
+        symptoms = [
+            ("🪫 Постоянная усталость", SYMPTOM_TIRED),
+            ("⚖️ Лишний вес не уходит", SYMPTOM_WEIGHT),
+            ("🍽️ Дети едят что попало", SYMPTOM_CJUNK),
+            ("🔬 Хочу разобраться в анализах", SYMPTOM_ANALYSIS),
+        ]
+        for title, cb_data in symptoms:
+            builder.row(types.InlineKeyboardButton(text=title, callback_data=f"symptom:{cb_data}"))
+
+        return builder.as_markup()
+
+    @general_lm_router.message(Command("start"))
+    async def cmd_start(message: types.Message, state: FSMContext, user_service: UserService) -> None:
+        message_text: str = message.text or ""
+        payload = message_text.split(" ", 1)[1] if " " in message_text else ""
+        utm_source = parse_utm(payload)
+
+        from_user = message.from_user
+        if not from_user:
             return
 
-        await state.clear()
-        await message.answer("❌ Диалог отменен. Для нового заказа /order")
+        logger.info(f"User {from_user.id} started with UTM: {utm_source}")
 
-    @general_lm_router.message(GeneralLMStates.waiting_for_product)
-    async def process_product(message: types.Message, state: FSMContext) -> None:
-        """Обработка выбора товара."""
-        if message.text not in ["1", "2", "3"]:
-            await message.answer("❌ Введите число от 1 до 3")
-            return
-
-        products = {"1": ("iPhone 15 Pro", 120000), "2": ("MacBook Air", 150000), "3": ("AirPods Pro", 25000)}
-
-        product_name, price = products[message.text]
-
-        # Сохраняем в состояние (в БД)
-        await state.update_data(product=product_name, price=price, product_id=message.text)
-
-        await state.set_state(GeneralLMStates.waiting_for_quantity)
-        await message.answer(f"✅ Выбрано: <b>{product_name}</b>\n" f"💰 Цена: {price}₽\n\n" f"Введите количество:")
-
-    @general_lm_router.message(GeneralLMStates.waiting_for_quantity)
-    async def process_quantity(message: types.Message, state: FSMContext) -> None:
-        """Обработка количества."""
+        # Сохраняем пользователя
         try:
-            if not message.text:
-                raise ValueError("Must enter count")
-            quantity = int(message.text)
-            if quantity < 1 or quantity > 10:
-                raise ValueError
-        except ValueError:
-            await message.answer("❌ Введите число от 1 до 10")
+            await user_service.register_user(
+                telegram_id=from_user.id,
+                username=from_user.username,
+                first_name=from_user.first_name,
+                last_name=from_user.last_name,
+                language_code=from_user.language_code,
+                utm_source=utm_source,
+            )
+        except Exception:  # NoQA
+            logger.exception("Failed to register user")
             return
 
-        data = await state.get_data()
-        total = data["price"] * quantity
-
-        await state.update_data(quantity=quantity, total=total)
-        await state.set_state(GeneralLMStates.waiting_for_address)
-
+        await state.set_state(GeneralLMStates.waiting_for_symptom)
         await message.answer(
-            f"📦 Количество: <b>{quantity}</b>\n" f"💵 Итого: <b>{total}₽</b>\n\n" f"Введите адрес доставки:"
+            "Привет! Я бот Жени, семейного нутрициолога и мамы 4 детей 👩‍👧‍👦👧‍\n\n"
+            "Расскажу, как питаться без запретов и находить энергию на всё.\n\n"
+            "Чтобы я подобрал для вас подарок, скажите, что сейчас беспокоит больше всего?"
+            "",
+            reply_markup=get_symptom_inline_keyboard(),
         )
 
-    @general_lm_router.message(GeneralLMStates.waiting_for_address)
-    async def process_address(message: types.Message, state: FSMContext) -> None:
-        """Обработка адреса."""
-        await state.update_data(address=message.text)
-        await state.set_state(GeneralLMStates.waiting_for_phone)
+    def get_document_source_keyboard(symptom: str) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
 
-        await message.answer("📍 Адрес сохранен!\n\n" "Введите номер телефона для связи:")
+        doc_source = [
+            ("📲 Отправить сюда (в Telegram)", f"src:telegram:{symptom}"),
+            ("🔗 Открыть в браузере (ссылка)", f"src:url:{symptom}"),
+        ]
+        for title, cb_data in doc_source:
+            builder.row(types.InlineKeyboardButton(text=title, callback_data=cb_data))
 
-    @general_lm_router.message(GeneralLMStates.waiting_for_phone)
-    async def process_phone(message: types.Message, state: FSMContext) -> None:
-        """Обработка телефона и показ сводки."""
-        await state.update_data(phone=message.text)
-        await state.set_state(GeneralLMStates.waiting_for_confirm)
+        return builder.as_markup()
 
-        data = await state.get_data()
-
-        await message.answer(
-            f"📋 <b>Проверьте заказ:</b>\n\n"
-            f"🛍 Товар: {data['product']}\n"
-            f"📦 Количество: {data['quantity']}\n"
-            f"💵 Сумма: {data['total']}₽\n"
-            f"📍 Адрес: {data['address']}\n"
-            f"📞 Телефон: {data['phone']}\n\n"
-            f"Подтвердить заказ? (да/нет)"
-        )
-
-    @general_lm_router.message(GeneralLMStates.waiting_for_confirm)
-    async def process_confirm(message: types.Message, state: FSMContext) -> None:
-        """Финальное подтверждение."""
-        if not message.text or message.text.lower() not in ["да", "yes", "подтвердить"]:
-            await state.clear()
-            await message.answer("❌ Заказ отменен. Начните заново /order")
+    @general_lm_router.callback_query(StateFilter(GeneralLMStates.waiting_for_symptom), F.data.startswith("symptom:"))
+    async def handle_tired(callback: types.CallbackQuery, state: FSMContext) -> None:
+        if not callback.data:
+            logger.warning("Invalid callback.data (None)")
             return
+        if not callback.message:
+            logger.warning("Invalid callback.message (None)")
+            return
+        symptom = callback.data.split(":")[1]
+        await callback.message.answer(HANDFUL_GUIDE, reply_markup=get_document_source_keyboard(symptom))
+        await callback.answer()  # Важно закрыть "часики" на кнопке
+        await state.set_state(GeneralLMStates.waiting_for_doc_target)
 
-        data = await state.get_data()
+    @general_lm_router.callback_query(StateFilter(GeneralLMStates.waiting_for_doc_target), F.data.startswith("src:"))
+    async def handle_src(callback: types.CallbackQuery, state: FSMContext) -> None:
+        if not callback.data:
+            logger.warning("Invalid callback.data (None)")
+            return
+        if not callback.message:
+            logger.warning("Invalid callback.message (None)")
+            return
+        src, symptom = callback.data.split(":")[1:]
+        await callback.answer()
+        if src == "telegram":
+            await callback.message.answer_document(
+                document=CHECKLIST_FILE_ID,  # TODO: from DB
+                caption=f"📄 {CHECKLIST_TITLE}",  # TODO: from DB
+                parse_mode="HTML",
+            )
+        else:
+            direct_url = await get_yandex_direct_link(
+                "https://disk.yandex.ru/i/AbCdEfGh123", oauth_token=YANDEX_OAUTH_TOKEN
+            )
 
-        # Здесь сохранение заказа в БД
-        # save_order_to_db(data)
+            await callback.message.answer_document(
+                document=direct_url,  # Telegram попытается скачать
+                caption="📄 {CHECKLIST_TITLE}",
+            )
 
+        builder = InlineKeyboardBuilder()
+        # Добавляем кнопку-ссылку
+        builder.row(
+            types.InlineKeyboardButton(
+                text="Перейти на канал 📢", url=f"https://t.me/{BOT_ID}"
+            )  # Замените на вашу ссылку
+        )
+        await asyncio.sleep(2.0)
+        await callback.message.answer(
+            f"""✅ Готово! Вы получили {CHECKLIST_TITLE}.
+А ещё Женя каждый день делится простыми лайфхаками для здоровья всей семьи в своём канале.
+Подписывайтесь, чтобы не пропустить полезное:""",
+            reply_markup=builder.as_markup(),
+        )
+        await callback.answer()
         await state.clear()
-        await message.answer(
-            f"✅ <b>Заказ оформлен!</b>\n\n"
-            f"Номер заказа: #12345\n"
-            f"Сумма: {data['total']}₽\n\n"
-            f"Мы свяжемся с вами по телефону {data['phone']}"
-        )
-
-    @general_lm_router.message(Command("status"))
-    async def cmd_status(message: types.Message, state: FSMContext) -> None:
-        """Проверка текущего состояния (для отладки)."""
-        current_state = await state.get_state()
-        data = await state.get_data()
-
-        if not current_state:
-            await message.answer("Нет активного диалога")
-            return
-
-        await message.answer(f"Текущее состояние: <code>{current_state}</code>\n" f"Данные: <pre>{data}</pre>")
 
     return general_lm_router

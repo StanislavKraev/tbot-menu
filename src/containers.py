@@ -39,6 +39,7 @@ class AppContainer(containers.DeclarativeContainer):
     bot_initializer = providers.Singleton(
         BotInitializer,
         bot_token=config.bot_token,
+        admin_telegram_id=config.admin_telegram_id,
         user_service=user_service,
         pdf_service=pdf_service,
         state_storage=state_storage,
