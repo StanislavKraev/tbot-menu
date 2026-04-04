@@ -73,4 +73,5 @@ jobs:
             zcat ${{ env.IMAGE_NAME }}.tar.gz | docker load
             rm ${{ env.IMAGE_NAME }}.tar.gz
             cd my_bot
+            docker compose exec bot alembic upgrade head
             docker compose up -d --force-recreate bot

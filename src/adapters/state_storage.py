@@ -76,7 +76,7 @@ class StateStorage(BaseStorage):
                 {"user_id": key.user_id, "chat_id": key.chat_id},
             )
             row = result.fetchone()
-            return json.loads(row.data) if row and row.data else {}
+            return row.data if row and row.data else {}
 
     async def update_data(self, key: StorageKey, data: Mapping[str, Any]) -> dict[str, Any]:
         current = await self.get_data(key)
