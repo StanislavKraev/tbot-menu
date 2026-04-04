@@ -9,12 +9,12 @@ from src.models.tables import users
 class UserRepository:
     """Репозиторий пользователей на SQLAlchemy Core."""
 
-    def __init__(self, db: AsyncEngine) -> None:
-        self._db = db
+    def __init__(self, engine: AsyncEngine) -> None:
+        self._engine = engine
 
     async def get_by_telegram_id(self, telegram_id: int) -> dict[str, Any] | None:
         """Получение пользователя по telegram_id с использованием covering index."""
-        async with self._db.begin() as conn:
+        async with self._engine.begin() as conn:
             stmt = select(users.c.id, users.c.telegram_id, users.c.username, users.c.created_at).where(
                 users.c.telegram_id == telegram_id
             )
@@ -33,7 +33,7 @@ class UserRepository:
         utm_source: str | None,
     ) -> dict[str, Any]:
         """Создание пользователя с возвратом созданной записи."""
-        async with self._db.begin() as conn:
+        async with self._engine.begin() as conn:
             stmt = (
                 insert(users)
                 .values(

@@ -127,7 +127,8 @@ select = [
 ignore = [
   # "E501", # line too long, handled by black
   "D211", # no-blank-line-before-class
-  "D213" # multi-line-summary-second-line
+  "D213", # multi-line-summary-second-line
+  "RUF001" # String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]

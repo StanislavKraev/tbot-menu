@@ -63,7 +63,7 @@ async def cmd_start(message: types.Message, user_service: UserService, pdf_servi
     # Скачиваем и отправляем PDF
     pdf_data = await pdf_service.download_pdf(pdf_url)
     if not pdf_data:
-        await message.answer("❌ Не удалось загрузить файл. Попробуйте позже.")  # NoQA: RUF001
+        await message.answer("❌ Не удалось загрузить файл. Попробуйте позже.")
         return
 
     # Отправляем как документ

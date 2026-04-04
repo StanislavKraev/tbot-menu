@@ -16,7 +16,7 @@ bot = Bot(token=settings.bot_token, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=storage)
 
 # Регистрация роутеров
-dp.include_router(order.router)
+dp.include_router(order.general_lm_router)
 
 
 @asynccontextmanager

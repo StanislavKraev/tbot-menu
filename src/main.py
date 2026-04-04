@@ -5,7 +5,7 @@ import aiohttp
 from dependency_injector.wiring import Provide, inject
 from loguru import logger
 
-from src.bot import BotInitializer
+from src.bot_init import BotInitializer
 from src.config import Settings
 from src.containers import AppContainer
 
@@ -50,12 +50,12 @@ async def run_webhook(
         dispatcher=bot_initializer.dp,
         bot=bot_initializer.bot,
     )
-    webhook_requests_handler.register(app, path=settings["webhook_path"])
+    webhook_requests_handler.register(app, path=settings["webhook_path"])  # type: ignore[index]
 
     setup_application(app, bot_initializer.dp, bot=bot_initializer.bot)
 
     # Настройка webhook URL
-    webhook_url = settings["webhook_url"]
+    webhook_url = settings["webhook_url"]  # type: ignore[index]
     if webhook_url is not None:
         await bot_initializer.bot.set_webhook(webhook_url, drop_pending_updates=True)
         logger.info(f"Webhook set to {webhook_url}")
@@ -63,8 +63,8 @@ async def run_webhook(
     runner = web.AppRunner(app)
     await runner.setup()
 
-    webhook_host = settings["webhook_host"]
-    webhook_port = settings["webhook_port"]
+    webhook_host = settings["webhook_host"]  # type: ignore[index]
+    webhook_port = settings["webhook_port"]  # type: ignore[index]
     site = web.TCPSite(runner, host=webhook_host, port=webhook_port)
 
     logger.info(f"Server started on {webhook_host}:{webhook_port}")
