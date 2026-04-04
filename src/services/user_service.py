@@ -1,7 +1,7 @@
 # src/services/user_service.py
 from typing import Any
 
-from src.repositories.user_repository import UserRepository
+from src.adapters.user_repository import UserRepository
 
 
 class UserService:

@@ -9,12 +9,12 @@ from src.models.tables import pdf_files
 class PdfRepository:
     """Репозиторий для управления PDF файлами."""
 
-    def __init__(self, db: AsyncEngine) -> None:
-        self._db = db
+    def __init__(self, engine: AsyncEngine) -> None:
+        self._engine = engine
 
     async def get_active_pdf(self) -> dict[str, Any] | None:
         """Получение активного PDF файла."""
-        async with self._db.begin() as conn:
+        async with self._engine.begin() as conn:
             stmt = (
                 select(pdf_files.c.id, pdf_files.c.filename, pdf_files.c.yandex_url)
                 .where(pdf_files.c.is_active == "1")
@@ -28,7 +28,7 @@ class PdfRepository:
 
     async def save_pdf_url(self, filename: str, url: str) -> dict[str, Any]:
         """Сохранение новой ссылки на PDF (деактивирует старые)."""
-        async with self._db.begin() as conn:
+        async with self._engine.begin() as conn:
             # Деактивируем старые
             await conn.execute(update(pdf_files).where(pdf_files.c.is_active == "1").values(is_active="0"))
 

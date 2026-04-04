@@ -3,7 +3,7 @@ from typing import Any
 import httpx
 from loguru import logger
 
-from src.repositories.pdf_repository import PdfRepository
+from src.adapters.pdf_repository import PdfRepository
 
 
 class PdfService:
