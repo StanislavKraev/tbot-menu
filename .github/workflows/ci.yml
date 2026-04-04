@@ -1,0 +1,34 @@
+name: CI (Tests)
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          # Включаем кэширование для максимальной скорости
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        # uv sync установит всё из вашего pyproject.toml / uv.lock
+        run: uv sync --all-groups
+
+      - name: Run Pytest BDD
+        # uv run автоматически использует созданное виртуальное окружение
+        # -v (verbose), -s (показывать print/logs)
+        run: uv run pytest -v -s
