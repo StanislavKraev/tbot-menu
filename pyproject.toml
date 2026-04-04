@@ -101,7 +101,8 @@ line-length = 120
 exclude = [
   '__init__.py',
   'tbot/migrations/versions/*.py',
-  'gunicorn_conf.py'
+  'gunicorn_conf.py',
+  'docs/**/*'
 ]
 select = [
   "E", # pycodestyle errors
